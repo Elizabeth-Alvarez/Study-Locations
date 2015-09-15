@@ -4,7 +4,12 @@ Tools Used:
 
 •	Angular
 
+•	Node.js
+
+•	Photoshop
+
 •	JavaScript
 
 •	Bootstrap CSS
+
 
