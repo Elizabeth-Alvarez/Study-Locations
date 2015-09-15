@@ -1,0 +1,437 @@
+<html>
+<head>
+  <title>Study Locations</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.3.5/angular-route.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-local-storage/0.2.1/angular-local-storage.min.js"></script>
+
+  <script>
+    var myApp = angular.module('myApp', ['ngRoute'] );
+
+    myApp.config(function ($routeProvider){
+      $routeProvider
+         .when('/',{
+             templateUrl: 'partials/home.html'
+         })
+
+         .when('/partial2',{
+             templateUrl: 'partials/user.html'
+         })
+
+         .when('/partial3',{
+             templateUrl: 'partials/locations.html'
+         })
+
+         .when('/discussion/:shop_id', {
+            templateUrl: 'partials/discussion.html',
+            controller: 'discussionsController'
+
+         })
+
+         .otherwise({
+             redirectTo: '/'
+         });
+    });
+
+    ////////Creating User Factory && Controller////////////////////////
+    myApp.factory('userFactory', function($http) {
+        var factory = {};
+        var person;
+        var users = [];
+
+        factory.getPerson = function(callback) {
+            callback(person);
+        }
+
+        factory.getUsers = function(callback) {
+            $http.get('/users').success(function(output) {
+                users = output;
+                callback(users);
+            })
+        }
+
+        factory.addUser = function(name) {
+            person = name;
+            $http.post('/addUser', info).success(function(output){
+            callback();
+          })
+        }
+
+        factory.getUser = function(name) {
+          person = name;
+        }
+
+        factory.getUserid = function(user_id, callback){
+        // url = '/id/' + name_id
+            $http.get('/userid/' + user_id).success(function(output){
+                user_id = output;
+                callback(user_id);
+            })
+        }
+
+        return factory;
+    }); //Ends Factory
+
+
+    //Inject factory into controller
+    myApp.controller('usersController', function($scope, userFactory){
+
+    	userFactory.getUsers(function(data) {
+    		$scope.users = data;
+    	});
+
+    	$scope.password_error = false;
+
+    	$scope.addUser = function() {
+    		//validation does work but due to button redirect to partial, it still changes page
+    		if($scope.newUser.password != $scope.newUser.confirm_password) {
+    			$scope.password_error = true;
+    			return false;
+    		}
+    		else {
+    			userFactory.addUser($scope.newUser.first_name);
+    		}
+    	}
+
+    	$scope.getUser = function() {
+    		userFactory.getUser($scope.newUser.user_name, function(data) {
+    			$scope.user = data;
+    		});
+
+    	}
+
+    });
+
+      ////////Creating Location Factory && Controller////////////////////////
+      myApp.factory('locationFactory', function($http){
+
+      	var factory = {};
+      	var locations = [];
+
+      	factory.getLocations = function(callback){
+      		$http.get('/location').success(function(output){
+      			locations = output;
+      			callback(locations);
+      		})
+      	}
+
+      	factory.addLocation = function(info, callback){
+      		$http.post('/addlocation', info).success(function(output){
+            locations.push({name: output.name, description: output.description, category: output.category, rating: output.rating, wifi: output.wifi, noiselevel: output.noiselevel, location: output.location, date: output.date })
+      			callback(locations);
+      		})
+      	}
+
+      	factory.location = function(id, callback){
+      		$http.get('/id/' + id).success(function(output){
+      			id = output;
+      			callback(id);
+      		})
+      	}
+
+      	factory.removeLocation = function(info) {
+      		$http.post('/removeLocation', info).success(function(output) {
+      			for(var i = 0; i < locations.length; i++){
+      				if(locations[i]._id === info._id) {
+      					locations.splice(i, 1);
+      				}
+      				return;
+      			}
+      		})
+      	}
+
+      	return factory;
+
+      }); //Ends factory
+
+        //Inject factory into controller
+        myApp.controller('locationsController', function ($scope, locationFactory ){
+
+            locationFactory.getLocations(function(data){
+                $scope.locations = data;
+            });
+
+            $scope.addLocation = function(){
+                // for(var i = 0; i < $scope.locations.length; i++) {
+                    // if($scope.locations[i].name == $scope.new_location.name) {
+                    //     alert("Shop already exists");
+                    //     return false;
+                    // }
+                    // else {
+                         locationFactory.addLocation($scope.new_location, function(output){
+                           $scope.locations = output;
+                           $scope.new_location = {};
+                        });
+                    // }
+                // }
+            }
+
+            $scope.removeLocation = function(location) {
+                  locationFactory.removeLocation(location)
+              }
+
+        });
+
+        ////////Creating Discussion Factory && Controller////////////////////////
+        myApp.factory('discussionFactory', function($http){
+
+        	var factory = {};
+
+        	var discussions = [];
+
+        	factory.addDiscussion = function(info, callback){
+        		$http.post('/addDiscussion', info).success(function(output){
+        			callback();
+        		})
+        	}
+
+        	factory.getDiscussions = function(callback){
+        		$http.get('/discussions').success(function(output){
+        			discussions = output;
+        			callback(discussions);
+        		})
+        	}
+
+        	factory.addUpvote = function(topic, callback) {
+        		$http.post('/addUpvote', topic).success(function(){
+        			callback();
+        		})
+        	}
+
+        	factory.addDownvote = function(topic, callback) {
+        		$http.post('/addDownvote', topic).success(function(){
+        			callback();
+        		})
+        	}
+
+        	factory.removeDiscussion = function(info) {
+        					$http.post('/removeDiscussions', info).success(function(output) {
+        							for(var i = 0; i < discussions.length; i++){
+        									if(discussions[i]._id === info._id) {
+        											discussions.splice(i, 1);
+        									}
+        									return;
+        							}
+        					})
+        			}
+
+        	return factory;
+
+        }); //End of factory
+
+        //Inject factory into controller
+        myApp.controller('discussionsController', function ($scope,$routeParams, discussionFactory, locationFactory, userFactory, commentFactory){
+
+
+            discussionFactory.getDiscussions(function(data){
+                $scope.discussions = data;
+            })
+
+
+            commentFactory.getComment(function(data){
+                $scope.comments = data;
+            });
+
+
+            $scope.id = $routeParams.shop_id;
+
+
+            userFactory.getPerson(function(data){
+                $scope.person = data;
+            });
+
+
+            locationFactory.location($scope.id, function(data){
+                $scope.location = data;
+            });
+
+
+
+            $scope.addDiscussion = function(new_discussion) {
+                $scope.new_discussion.user = $scope.person;
+
+                $scope.new_discussion.shop_id = $scope.id;
+
+                discussionFactory.addDiscussion(new_discussion, function(){
+                    discussionFactory.getDiscussions(function(data){
+                        $scope.discussions = data;
+                    })
+                    commentFactory.getComment(function(data){
+                        $scope.comments = data;
+                        $scope.new_discussion = {};
+                    })
+                });
+            }
+
+            $scope.addUpvote = function(discussion_id){
+
+                var info = {
+                  id: discussion_id
+                };
+
+                discussionFactory.addUpvote(info, function() {
+                  discussionFactory.getDiscussions(function(data){
+                      $scope.discussions = data;
+                    });
+                });
+            }
+
+
+            $scope.addDownvote = function(discussion_id){
+
+                var info = {
+                  id: discussion_id
+                };
+
+                discussionFactory.addDownvote(info, function() {
+                  discussionFactory.getDiscussions(function(data){
+                      $scope.discussions = data;
+                    });
+                });
+            }
+
+            $scope.removeDiscussion = function(discussion) {
+                  discussionFactory.removeDiscussion(discussion)
+              }
+
+            $scope.addComment = function(new_comment,discussion_id) {
+
+                new_comment.user = $scope.person
+
+                new_comment.discussion_id = discussion_id;
+
+                commentFactory.addComment(new_comment, function(){
+                    discussionFactory.getDiscussions(function(data){
+                        $scope.discussions = data;
+                    })
+
+                    commentFactory.getComment(function(data){
+                        $scope.comments = data;
+                    })
+                });
+            }
+
+
+            $scope.addUpvotes = function(comment_id){
+
+                var info = {
+                  id: comment_id
+                };
+
+                commentFactory.addUpvotes(info, function() {
+                  commentFactory.getComment(function(data){
+                      $scope.comments = data;
+                    });
+                });
+            }
+
+
+            $scope.addDownvotes = function(comment_id){
+
+                var info = {
+                  id: comment_id
+                };
+
+                commentFactory.addDownvotes(info, function() {
+                  commentFactory.getComment(function(data){
+                      $scope.comments = data;
+                    });
+                });
+            }
+
+            $scope.removeComment = function(comment) {
+                  commentFactory.removeComment(comment)
+              }
+
+         });
+
+        ////////Creating Comment Factory////////////////////////
+        myApp.factory('commentFactory', function($http){
+
+        	var factory = {};
+
+        	var comments = [];
+
+        	factory.addComment = function(info, callback){
+        		$http.post('/addComment', info).success(function(output){
+        			callback();
+        		})
+        	}
+
+        	factory.getComment = function(callback){
+        		$http.get('/comment').success(function(output){
+        			comment = output;
+        			callback(comment);
+        		})
+        	}
+
+        	factory.addUpvotes = function(topic, callback) {
+        		$http.post('/addUpvotes', topic).success(function(){
+        			callback();
+        		})
+        	}
+
+        	factory.addDownvotes = function(topic, callback) {
+        		$http.post('/addDownvotes', topic).success(function(){
+        			callback();
+        		})
+        	}
+
+        	factory.removeComment = function(info) {
+        					$http.post('/removeComments', info).success(function(output) {
+        							for(var i = 0; i < comments.length; i++){
+        									if(comments[i]._id === info._id) {
+        											comments.splice(i, 1);
+        									}
+        									return;
+        							}
+        					})
+        			}
+
+        	return factory;
+
+        }); //End of facory
+
+  </script>
+
+  <style type="text/css">
+  .btn-success {
+    margin-left: 90%;
+    margin-top: 10px;
+  }
+  .jumbotron {
+    position: relative;
+    background: url('/img/splash2.jpg') no-repeat center center;
+    height: 900px;
+    }
+    .change_h1 {
+      margin-left: 60px;
+      margin-bottom: 10px;
+      color: white;
+    }
+    .splash {
+      font-weight: bold;
+      margin-top: 0px;
+      padding: 20px;
+      color: #a94442;
+    }
+    .btn-change {
+      background-color: #a94442;
+      outline-color: #a94442;
+      color: #333333;
+    }
+  </style>
+
+</head>
+<body ng-app='myApp'>
+    <div>
+        <div ng-view=""></div>
+    </div>
+</body>
+</html>

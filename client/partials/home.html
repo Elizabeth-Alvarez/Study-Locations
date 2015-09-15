@@ -1,0 +1,21 @@
+<div ng-controller='usersController'>
+  <div class="jumbotron splash">
+    <!-- <h1 class="col-md-8 col-md-offset-2 splash">Perfect Study Locations</h1> -->
+    <div class="container splash">
+      <h1 class="col-md-8 col-md-offset-2">Perfect Study Locations</h1>
+      <div class="col-md-6 col-md-offset-3">
+        <h2 class="splash">Please Enter Your Name</h2>
+        <div ng-show="newUser.error" class="alert alert-danger">{{newUser.error}}</div>
+        <form name="register_form" ng-submit="newUser.login()" role="form">
+          <div class="form-group" ng-class="{'has-error': register_form.user_name.$dirty && register_form.user_name.$error.required }">
+            <label for="user_name"></label>
+            <input type="text" name="user_name" id="user_name" class="form-control" ng-model="newUser.user_name" required />
+            <span ng-show="register_form.user_name.$dirty && register_form.user_name.$error.required" class="help-block">Name is required</span>
+          </div>
+        </form>
+            <!-- <a href="#/partial3" ng-click='addUser()' value="Register" class="btn btn-primary">Register</a> -->
+        <a href="#/partial3" ng-click='getUser(user)' value="Login" class="btn btn-success btn-change">Enter</a>
+      </div>
+    </div> <!-- End of Container-->
+  </div>
+</div>
